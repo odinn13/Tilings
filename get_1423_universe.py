@@ -45,8 +45,7 @@ pack = TileScopePack(
 )
 
 css = TileScope("1423", pack)
-created_file = []
-max_depth = 5
+max_depth = 10
 for depth in range(1, max_depth + 1):
     css.do_level()
     if css.find_tree():
@@ -55,8 +54,4 @@ for depth in range(1, max_depth + 1):
     universe_file = f"1423_universe_depth{depth}.pkl.gz"
     with gzip.open(universe_file, "w") as f:
         pickle.dump(css, f, protocol=4)
-    created_file.append(universe_file)
     print(css.status())
-
-for univ_file in created_file[:-1]:
-    os.remove(univ_file)
