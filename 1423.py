@@ -17,6 +17,7 @@ def print_rule(rule):
 
 
 strat_to_apply = []  # type: List[Tuple[Tiling, strat.abstract_strategy.Strategy]]
+strat_to_apply2 = []  # type: List[Tuple[Tiling, strat.abstract_strategy.Strategy]]
 to_fake_verify = []  # type: List[Tiling]
 row_placements = strat.RowAndColumnPlacementStrategy(place_row=True, place_col=False)
 
@@ -146,6 +147,27 @@ print("=" * 80)
 print(" " * 30, "End of the main tree")
 print("=" * 80)
 
+t16 = t2.add_single_cell_obstruction(Perm((0,)), (2, 1))
+t17 = t2.add_single_cell_requirement(Perm((0,)), (2, 1))
+strat_to_apply2.append((t2, strat.AllCellInsertionStrategy()))
+print_rule("F2 = F16 + F17")
+print_name("F16")
+print(t16)
+assert set(t16.find_factors()) == set([t0, t7])
+strat_to_apply2.append((t16, strat.FactorStrategy()))
+print_rule("F16 = F0 * F7")
+print_name("F17")
+print(t17)
+t17_1 = t17.place_point_in_cell((2, 1), DIR_NORTH)
+strat_to_apply2.append((t17, strat.RequirementPlacementStrategy()))
+print(t17_1)
+assert all(f in t10.find_factors() for f in t17.find_factors())
+strat_to_apply2.append((t17_1, strat.FactorStrategy()))
+
+print("=" * 80)
+print(" " * 30, "End of the second tree")
+print("=" * 80)
+
 build_universe = True
 if build_universe:
     fake_verification = strat.FakeVerificationStrategy(to_fake_verify)
@@ -154,8 +176,9 @@ if build_universe:
     pack.ver_strats.remove(strat.LocallyFactorableVerificationStrategy())
     pack = pack.add_verification(fake_verification)
     css = TileScope(t0, pack, debug=True)
+    css2 = TileScope(t2, pack, debug=True)
 
-    def apply_strat(tiling, strategy, inferral=False):
+    def apply_strat(tiling, strategy, css):
         label = css.classdb.get_label(tiling)
         try:
             css._expand_class_with_strategy(tiling, strategy, label)
@@ -163,5 +186,9 @@ if build_universe:
             css._expand_class_with_strategy(tiling, strategy, label, inferral=True)
 
     for t, s in strat_to_apply:
-        apply_strat(t, s)
+        apply_strat(t, s, css)
+
+    for t, s in strat_to_apply2:
+        apply_strat(t, s, css2)
     css.auto_search(max_time=0, smallest=True)
+    css2.auto_search(max_time=0, smallest=True)
