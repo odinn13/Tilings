@@ -32,11 +32,18 @@ class AddAssumptionsConstructor(Constructor):
     The constructor used to count when a new variable is added.
     """
 
-    def __init__(self, new_parameters: Iterable[str], extra_parameters: Dict[str, str]):
+    def __init__(
+        self,
+        child: Tiling,
+        new_parameters: Iterable[str],
+        extra_parameters: Dict[str, str],
+    ):
         #  parent parameter -> child parameter mapping
         self.extra_parameters = extra_parameters
         #  the paramater that was added, to count we must sum over all possible values
         self.new_parameters = tuple(new_parameters)
+        #  the min_value taken by the assumption
+        self.min_values = tuple(child.get_minimum_value(k) for k in self.new_parameters)
 
     def get_equation(self, lhs_func: Function, rhs_funcs: Tuple[Function, ...]) -> Eq:
         rhs_func = rhs_funcs[0]
@@ -48,13 +55,20 @@ class AddAssumptionsConstructor(Constructor):
         return Eq(lhs_func, rhs_func.subs(subs, simultaneous=True))
 
     def reliance_profile(self, n: int, **parameters: int) -> RelianceProfile:
-        raise NotImplementedError
+        profile: Dict[str, Tuple[int, ...]] = {
+            self.extra_parameters[k]: (val,) for k, val in parameters.items()
+        }
+        profile["n"] = (n,)
+        for k, min_val in zip(self.new_parameters, self.min_values):
+            profile[k] = tuple(range(min_val, n + 1))
+        return (profile,)
 
     def get_recurrence(self, subrecs: SubRecs, n: int, **parameters: int) -> int:
         subrec = subrecs[0]
         new_params = {self.extra_parameters[k]: val for k, val in parameters.items()}
+        profile = self.reliance_profile(n, **parameters)[0]
         res = 0
-        for values in product(*[range(n + 1) for _ in self.new_parameters]):
+        for values in product(*[profile[k] for k in self.new_parameters]):
             for k, val in zip(self.new_parameters, values):
                 new_params[k] = val
             res += subrec(n, **new_params)
@@ -108,7 +122,7 @@ class AddAssumptionsStrategy(Strategy[Tiling, GriddedPerm]):
                 raise StrategyDoesNotApply("Can't split the tracking assumption")
         new_parameters = [children[0].get_parameter(ass) for ass in self.assumptions]
         return AddAssumptionsConstructor(
-            new_parameters, self.extra_parameters(comb_class, children)[0]
+            children[0], new_parameters, self.extra_parameters(comb_class, children)[0]
         )
 
     def extra_parameters(
