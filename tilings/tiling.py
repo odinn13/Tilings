@@ -1207,6 +1207,8 @@ class Tiling(CombinatorialClass):
         """
         if any(ob.is_empty() for ob in self.obstructions):
             return True
+        if any(f.dimensions[0] > 7 for f in self.find_factors()):
+            return True
         if len(self.requirements) <= 1:
             return False
         MGP = MinimalGriddedPerms(self)
