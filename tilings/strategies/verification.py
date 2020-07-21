@@ -41,6 +41,7 @@ __all__ = [
     "ElementaryVerificationStrategy",
     "LocalVerificationStrategy",
     "MonotoneTreeVerificationStrategy",
+    "ShortObVerification",
 ]
 
 
@@ -654,3 +655,26 @@ class MonotoneTreeVerificationStrategy(TileScopeVerificationStrategy):
 
     def __str__(self) -> str:
         return "monotone tree verification"
+
+
+class ShortObVerification(TileScopeVerificationStrategy):
+    @staticmethod
+    def verified(tiling: Tiling):
+        if tiling.dimensions != (1, 1) and all(
+            ob.is_single_cell() or len(ob) < 3 for ob in tiling.obstructions
+        ):
+            print("verifying")
+            print(tiling)
+            return True
+        return False
+
+    @staticmethod
+    def formal_step() -> str:
+        return "tiling has short crossing obstructions"
+
+    def __str__(self) -> str:
+        return "short crossing obstruction verification"
+
+    @classmethod
+    def from_dict(cls, d: dict) -> "ShortObVerification":
+        return cls(**d)
