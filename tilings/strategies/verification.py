@@ -660,13 +660,9 @@ class MonotoneTreeVerificationStrategy(TileScopeVerificationStrategy):
 class ShortObVerification(TileScopeVerificationStrategy):
     @staticmethod
     def verified(tiling: Tiling):
-        if tiling.dimensions != (1, 1) and all(
+        return tiling.dimensions != (1, 1) and all(
             ob.is_single_cell() or len(ob) < 3 for ob in tiling.obstructions
-        ):
-            print("verifying")
-            print(tiling)
-            return True
-        return False
+        )
 
     @staticmethod
     def formal_step() -> str:
